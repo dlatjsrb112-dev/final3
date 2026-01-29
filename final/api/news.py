@@ -3,13 +3,13 @@ Vercel 서버리스: 뉴스 수집 API. API 키는 환경변수에서만 사용�
 """
 import json
 import os
+import sys
 from http.server import BaseHTTPRequestHandler
 
-# 프로젝트 루트에서 모듈 로드 (Vercel 실행 시 cwd = 루트)
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from news_fetcher import fetch_google_news
+# 프로젝트 루트를 path에 추가 (Vercel 실행 시)
+_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _root not in sys.path:
+    sys.path.insert(0, _root)
 
 
 def _read_json_body(handler: BaseHTTPRequestHandler):
@@ -40,6 +40,11 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        try:
+            from news_fetcher import fetch_google_news
+        except Exception as e:
+            _send_json(self, 500, {"ok": False, "error": "모듈 로드 실패: " + str(e)})
+            return
         try:
             data = _read_json_body(self)
             keyword = (data.get("keyword") or "").strip()

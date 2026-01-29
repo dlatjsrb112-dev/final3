@@ -6,8 +6,9 @@ import os
 import sys
 from http.server import BaseHTTPRequestHandler
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from gemini_service import chat_with_news
+_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _root not in sys.path:
+    sys.path.insert(0, _root)
 
 
 def _read_json_body(handler: BaseHTTPRequestHandler):
@@ -38,6 +39,11 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        try:
+            from gemini_service import chat_with_news
+        except Exception as e:
+            _send_json(self, 500, {"ok": False, "error": "모듈 로드 실패: " + str(e)})
+            return
         try:
             data = _read_json_body(self)
             message = (data.get("message") or "").strip()
