@@ -1,0 +1,8 @@
+# 로컬 실행용 (Flask, Streamlit 포함)
+streamlit
+flask
+gunicorn
+google-genai
+feedparser
+requests
+python-dotenv

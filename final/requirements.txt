@@ -1,6 +1,4 @@
-streamlit
-flask
-gunicorn
+# Vercel 서버리스 API용 최소 의존성 (250MB 제한)
 google-genai
 feedparser
 requests

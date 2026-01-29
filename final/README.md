@@ -10,11 +10,13 @@
 
 ## 설치
 
+- **Vercel 배포**: `requirements.txt`는 API용 최소 의존성만 포함 (250MB 제한 대응).
+- **로컬 실행 (Flask/Streamlit)**:
 ```bash
 cd final
 python -m venv .venv
 .venv\Scripts\activate   # Windows
-pip install -r requirements.txt
+pip install -r requirements-full.txt
 ```
 
 ## API 키 설정 (유출 금지)
@@ -67,6 +69,8 @@ streamlit run app.py
 3. 배포 시 자동으로 `api/` 서버리스 함수와 `index.html`이 배포됨
 
 API는 서버에서만 환경변수를 읽으며, 클라이언트/프론트엔드에는 API 키가 노출되지 않습니다.
+
+**250MB 초과 오류 시**: 저장소 루트에 `pyproject.toml` 또는 `uv.lock` 이 있으면 제거하세요. Vercel이 `requirements.txt`(API용 최소 의존성)만 사용하도록 해야 합니다.
 
 ## 기타 배포 (Render, Railway 등)
 

@@ -3,5 +3,10 @@
   "buildCommand": "",
   "rewrites": [
     { "source": "/", "destination": "/index.html" }
-  ]
+  ],
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "{templates/**,public/**,**/__pycache__/**,**/*.pyc,app.py,app_web.py,run*.bat,Procfile,README.md,.env.example,index.html,.git/**,.venv/**,venv/**}"
+    }
+  }
 }
