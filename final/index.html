@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>뉴스 챗봇</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a20;
+      --border: #2a2a32;
+      --text: #e8e8ed;
+      --text-muted: #8888a0;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --user-msg: #2d2d3a;
+      --bot-msg: #252530;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: var(--text-muted);
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .input-row input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .input-row input::placeholder { color: var(--text-muted); }
+    .input-row input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #3a3a45; }
+    .news-list {
+      list-style: none;
+    }
+    .news-list li {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .news-list li:last-child { border-bottom: none; }
+    .news-list .title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .news-list .meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .news-list a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .news-list a:hover { text-decoration: underline; }
+    .summary-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 16px;
+      white-space: pre-wrap;
+      margin-bottom: 16px;
+    }
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+      max-height: 400px;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+    .msg.user {
+      background: var(--user-msg);
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.bot {
+      background: var(--bot-msg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .chat-form input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .chat-form input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .status {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .status.error { color: var(--error); }
+    .status.success { color: var(--success); }
+    .hidden { display: none !important; }
+    .spinner::after {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-left: 8px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📰 뉴스 챗봇</h1>
+      <p>키워드로 뉴스 10건을 수집하고, 요약·질문할 수 있습니다.</p>
+    </header>
+
+    <div class="card">
+      <h2>1. 키워드로 뉴스 수집</h2>
+      <div class="input-row">
+        <input type="text" id="keyword" placeholder="예: 인공지능, 삼성전자" />
+        <button type="button" class="btn" id="btnFetch">뉴스 수집 (10건)</button>
+      </div>
+      <p id="fetchStatus" class="status hidden"></p>
+    </div>
+
+    <div class="card hidden" id="newsCard">
+      <h2>수집된 뉴스</h2>
+      <ul class="news-list" id="newsList"></ul>
+      <button type="button" class="btn btn-secondary" id="btnSummarize">요약하기</button>
+      <p id="summarizeStatus" class="status hidden"></p>
+    </div>
+
+    <div class="card hidden" id="summaryCard">
+      <h2>뉴스 요약</h2>
+      <div class="summary-box" id="summaryText"></div>
+    </div>
+
+    <div class="card hidden" id="chatCard">
+      <h2>뉴스에 대해 질문하기</h2>
+      <div class="chat-area">
+        <div class="chat-messages" id="chatMessages"></div>
+        <form class="chat-form" id="chatForm">
+          <input type="text" id="chatInput" placeholder="요약된 뉴스에 대해 궁금한 것을 물어보세요." autocomplete="off" />
+          <button type="submit" class="btn" id="btnSend">전송</button>
+        </form>
+      </div>
+      <p id="chatStatus" class="status hidden"></p>
+    </div>
+  </div>
+
+  <script>
+    const keywordEl = document.getElementById('keyword');
+    const btnFetch = document.getElementById('btnFetch');
+    const fetchStatus = document.getElementById('fetchStatus');
+    const newsCard = document.getElementById('newsCard');
+    const newsList = document.getElementById('newsList');
+    const btnSummarize = document.getElementById('btnSummarize');
+    const summarizeStatus = document.getElementById('summarizeStatus');
+    const summaryCard = document.getElementById('summaryCard');
+    const summaryText = document.getElementById('summaryText');
+    const chatCard = document.getElementById('chatCard');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const btnSend = document.getElementById('btnSend');
+    const chatStatus = document.getElementById('chatStatus');
+
+    let chatHistory = [];
+    let currentKeyword = '';
+    let currentArticles = [];
+    let currentSummary = '';
+
+    function apiUrl(path) {
+      return path.startsWith('http') ? path : (window.__API_BASE__ || '') + path;
+    }
+
+    function showStatus(el, msg, type) {
+      el.textContent = msg;
+      el.className = 'status ' + (type || '');
+      el.classList.remove('hidden');
+    }
+    function hideStatus(el) { el.classList.add('hidden'); }
+
+    async function fetchNews() {
+      const keyword = keywordEl.value.trim();
+      if (!keyword) {
+        showStatus(fetchStatus, '키워드를 입력하세요.', 'error');
+        return;
+      }
+      btnFetch.disabled = true;
+      showStatus(fetchStatus, '수집 중...', 'spinner');
+      try {
+        const res = await fetch(apiUrl('/api/news'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword }),
+          credentials: 'same-origin'
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          showStatus(fetchStatus, data.error || '수집 실패', 'error');
+          return;
+        }
+        hideStatus(fetchStatus);
+        currentKeyword = keyword;
+        currentArticles = data.articles || [];
+        newsList.innerHTML = currentArticles.map(a =>
+          `<li>
+            <div class="title">${escapeHtml(a.title || '')}</div>
+            ${a.summary ? `<div class="meta">${escapeHtml(a.summary.slice(0, 120))}…</div>` : ''}
+            <a href="${escapeHtml(a.link || '#')}" target="_blank" rel="noopener">기사 보기</a>
+          </li>`
+        ).join('');
+        newsCard.classList.remove('hidden');
+        summaryCard.classList.add('hidden');
+        summaryText.textContent = '';
+        chatCard.classList.add('hidden');
+        currentSummary = '';
+        chatHistory = [];
+      } catch (e) {
+        showStatus(fetchStatus, '연결 오류: ' + e.message, 'error');
+      } finally {
+        btnFetch.disabled = false;
+      }
+    }
+
+    async function doSummarize() {
+      if (!currentArticles.length) {
+        showStatus(summarizeStatus, '먼저 뉴스를 수집하세요.', 'error');
+        return;
+      }
+      btnSummarize.disabled = true;
+      showStatus(summarizeStatus, '요약 중...', 'spinner');
+      try {
+        const res = await fetch(apiUrl('/api/summarize'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword: currentKeyword, articles: currentArticles }),
+          credentials: 'same-origin'
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          showStatus(summarizeStatus, data.error || '요약 실패', 'error');
+          return;
+        }
+        hideStatus(summarizeStatus);
+        currentSummary = data.summary || '';
+        summaryText.textContent = currentSummary;
+        summaryCard.classList.remove('hidden');
+        chatCard.classList.remove('hidden');
+        chatMessages.innerHTML = '';
+        chatHistory = [];
+      } catch (e) {
+        showStatus(summarizeStatus, '연결 오류: ' + e.message, 'error');
+      } finally {
+        btnSummarize.disabled = false;
+      }
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function addMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendChat() {
+      const message = chatInput.value.trim();
+      if (!message) return;
+      if (!currentSummary) {
+        addMessage('bot', '먼저 뉴스를 수집하고 요약하세요.');
+        return;
+      }
+      chatInput.value = '';
+      addMessage('user', message);
+      chatHistory.push({ role: 'user', text: message });
+
+      btnSend.disabled = true;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'msg bot';
+      placeholder.textContent = '답변 생성 중…';
+      placeholder.classList.add('spinner');
+      chatMessages.appendChild(placeholder);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        const res = await fetch(apiUrl('/api/chat'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            history: chatHistory.slice(0, -1),
+            summary: currentSummary,
+            keyword: currentKeyword
+          }),
+          credentials: 'same-origin'
+        });
+        const data = await res.json();
+        placeholder.remove();
+        if (!data.ok) {
+          addMessage('bot', '오류: ' + (data.error || '알 수 없음'));
+          return;
+        }
+        chatHistory.push({ role: 'model', text: data.reply });
+        addMessage('bot', data.reply);
+      } catch (e) {
+        placeholder.remove();
+        addMessage('bot', '연결 오류: ' + e.message);
+      } finally {
+        btnSend.disabled = false;
+      }
+    }
+
+    btnFetch.addEventListener('click', fetchNews);
+    btnSummarize.addEventListener('click', doSummarize);
+    chatForm.addEventListener('submit', (e) => { e.preventDefault(); sendChat(); });
+  </script>
+</body>
+</html>

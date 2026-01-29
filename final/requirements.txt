@@ -1,0 +1,7 @@
+streamlit
+flask
+gunicorn
+google-genai
+feedparser
+requests
+python-dotenv
